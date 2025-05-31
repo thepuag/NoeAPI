@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "FVx4cWLqSgU=",
+  "success": true,
+  "projectFilePath": "/home/test/Documentos/+CODE/NoeAPI/Noe.Models/Noe.Models.csproj",
+  "expectedPackageFiles": [
+    "/home/test/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.4/microsoft.aspnetcore.app.ref.9.0.4.nupkg.sha512"
+  ],
+  "logs": []
+}

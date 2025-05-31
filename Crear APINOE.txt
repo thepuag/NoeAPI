@@ -1,0 +1,1550 @@
+# API .NET Core 8 con Arquitectura de 4 Capas
+
+## 1. Estructura del Proyecto
+
+```
+MyApi/
+├── MyApi.API/
+├── MyApi.BLL/
+├── MyApi.DAL/
+└── MyApi.Models/
+```
+
+## 2. MyApi.Models - Capa de Modelos
+
+### Models/Entities/Usuario.cs
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+namespace MyApi.Models.Entities
+{
+    public class Usuario
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(255)]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [StringLength(255)]
+        public string GoogleId { get; set; } = string.Empty;
+
+        [StringLength(500)]
+        public string ImagenUrl { get; set; } = string.Empty;
+
+        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+
+        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+
+        public bool Activo { get; set; } = true;
+    }
+}
+```
+
+### Models/Entities/Producto.cs
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MyApi.Models.Entities
+{
+    public class Producto
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(200)]
+        public string Nombre { get; set; } = string.Empty;
+
+        [StringLength(1000)]
+        public string Descripcion { get; set; } = string.Empty;
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Precio { get; set; }
+
+        [StringLength(500)]
+        public string UrlImg { get; set; } = string.Empty;
+
+        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+
+        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+
+        public bool Activo { get; set; } = true;
+
+        // Navegación
+        public virtual ICollection<Almacen> Almacenes { get; set; } = new List<Almacen>();
+    }
+}
+```
+
+### Models/Entities/Almacen.cs
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MyApi.Models.Entities
+{
+    public class Almacen
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public int IdProducto { get; set; }
+
+        [Required]
+        public int Cantidad { get; set; }
+
+        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+
+        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+
+        // Navegación
+        [ForeignKey("IdProducto")]
+        public virtual Producto Producto { get; set; } = null!;
+    }
+}
+```
+
+### Models/DTOs/BaseDto.cs
+```csharp
+namespace MyApi.Models.DTOs
+{
+    public abstract class BaseDto
+    {
+        public int Id { get; set; }
+        public DateTime FechaCreacion { get; set; }
+        public DateTime FechaActualizacion { get; set; }
+        public bool Activo { get; set; }
+    }
+}
+```
+
+### Models/DTOs/UsuarioDto.cs
+```csharp
+namespace MyApi.Models.DTOs
+{
+    public class UsuarioDto : BaseDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string GoogleId { get; set; } = string.Empty;
+        public string ImagenUrl { get; set; } = string.Empty;
+    }
+
+    public class UsuarioCreateDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string GoogleId { get; set; } = string.Empty;
+        public string ImagenUrl { get; set; } = string.Empty;
+    }
+
+    public class UsuarioUpdateDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string ImagenUrl { get; set; } = string.Empty;
+    }
+}
+```
+
+### Models/DTOs/ProductoDto.cs
+```csharp
+namespace MyApi.Models.DTOs
+{
+    public class ProductoDto : BaseDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public decimal Precio { get; set; }
+        public string UrlImg { get; set; } = string.Empty;
+    }
+
+    public class ProductoCreateDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public decimal Precio { get; set; }
+        public string UrlImg { get; set; } = string.Empty;
+    }
+
+    public class ProductoUpdateDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public decimal Precio { get; set; }
+        public string UrlImg { get; set; } = string.Empty;
+    }
+}
+```
+
+### Models/DTOs/AlmacenDto.cs
+```csharp
+namespace MyApi.Models.DTOs
+{
+    public class AlmacenDto : BaseDto
+    {
+        public int IdProducto { get; set; }
+        public int Cantidad { get; set; }
+        public ProductoDto? Producto { get; set; }
+    }
+
+    public class AlmacenCreateDto
+    {
+        public int IdProducto { get; set; }
+        public int Cantidad { get; set; }
+    }
+
+    public class AlmacenUpdateDto
+    {
+        public int Id { get; set; }
+        public int IdProducto { get; set; }
+        public int Cantidad { get; set; }
+    }
+}
+```
+
+### Models/DTOs/AuthDto.cs
+```csharp
+namespace MyApi.Models.DTOs
+{
+    public class GoogleAuthDto
+    {
+        public string Token { get; set; } = string.Empty;
+    }
+
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = string.Empty;
+        public UsuarioDto Usuario { get; set; } = null!;
+        public DateTime ExpiresAt { get; set; }
+    }
+}
+```
+
+## 3. MyApi.DAL - Capa de Acceso a Datos
+
+### DAL/Context/ApplicationDbContext.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Context
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<Producto> Productos { get; set; }
+        public DbSet<Almacen> Almacenes { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Configuración Usuario
+            modelBuilder.Entity<Usuario>(entity =>
+            {
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.HasIndex(e => e.GoogleId).IsUnique();
+            });
+
+            // Configuración Producto
+            modelBuilder.Entity<Producto>(entity =>
+            {
+                entity.Property(e => e.Precio).HasPrecision(18, 2);
+            });
+
+            // Configuración Almacen
+            modelBuilder.Entity<Almacen>(entity =>
+            {
+                entity.HasOne(d => d.Producto)
+                    .WithMany(p => p.Almacenes)
+                    .HasForeignKey(d => d.IdProducto)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+        }
+    }
+}
+```
+
+### DAL/Interfaces/IBaseRepository.cs
+```csharp
+using System.Linq.Expressions;
+
+namespace MyApi.DAL.Interfaces
+{
+    public interface IBaseRepository<T> where T : class
+    {
+        Task<IEnumerable<T>> GetAllAsync();
+        Task<T?> GetByIdAsync(int id);
+        Task<IEnumerable<T>> GetByColumnStringAsync(string columnName, string value);
+        Task<IEnumerable<T>> GetByColumnIntAsync(string columnName, int value);
+        Task<T> CreateAsync(T entity);
+        Task<T> UpdateAsync(T entity);
+        Task<bool> DeleteAsync(int id);
+        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
+    }
+}
+```
+
+### DAL/Interfaces/IUsuarioRepository.cs
+```csharp
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Interfaces
+{
+    public interface IUsuarioRepository : IBaseRepository<Usuario>
+    {
+        Task<Usuario?> GetByEmailAsync(string email);
+        Task<Usuario?> GetByGoogleIdAsync(string googleId);
+    }
+}
+```
+
+### DAL/Interfaces/IProductoRepository.cs
+```csharp
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Interfaces
+{
+    public interface IProductoRepository : IBaseRepository<Producto>
+    {
+        Task<IEnumerable<Producto>> GetActiveProductsAsync();
+    }
+}
+```
+
+### DAL/Interfaces/IAlmacenRepository.cs
+```csharp
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Interfaces
+{
+    public interface IAlmacenRepository : IBaseRepository<Almacen>
+    {
+        Task<IEnumerable<Almacen>> GetByProductoIdAsync(int productoId);
+        Task<Almacen?> GetByProductoIdSingleAsync(int productoId);
+    }
+}
+```
+
+### DAL/Repositories/BaseRepository.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MyApi.DAL.Context;
+using MyApi.DAL.Interfaces;
+using System.Linq.Expressions;
+using System.Reflection;
+
+namespace MyApi.DAL.Repositories
+{
+    public class BaseRepository<T> : IBaseRepository<T> where T : class
+    {
+        protected readonly ApplicationDbContext _context;
+        protected readonly DbSet<T> _dbSet;
+
+        public BaseRepository(ApplicationDbContext context)
+        {
+            _context = context;
+            _dbSet = context.Set<T>();
+        }
+
+        public virtual async Task<IEnumerable<T>> GetAllAsync()
+        {
+            return await _dbSet.ToListAsync();
+        }
+
+        public virtual async Task<T?> GetByIdAsync(int id)
+        {
+            return await _dbSet.FindAsync(id);
+        }
+
+        public virtual async Task<IEnumerable<T>> GetByColumnStringAsync(string columnName, string value)
+        {
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var property = Expression.Property(parameter, columnName);
+            var constant = Expression.Constant(value);
+            var equality = Expression.Equal(property, constant);
+            var lambda = Expression.Lambda<Func<T, bool>>(equality, parameter);
+
+            return await _dbSet.Where(lambda).ToListAsync();
+        }
+
+        public virtual async Task<IEnumerable<T>> GetByColumnIntAsync(string columnName, int value)
+        {
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var property = Expression.Property(parameter, columnName);
+            var constant = Expression.Constant(value);
+            var equality = Expression.Equal(property, constant);
+            var lambda = Expression.Lambda<Func<T, bool>>(equality, parameter);
+
+            return await _dbSet.Where(lambda).ToListAsync();
+        }
+
+        public virtual async Task<T> CreateAsync(T entity)
+        {
+            // Establecer fecha de creación si la entidad la tiene
+            if (entity.GetType().GetProperty("FechaCreacion") != null)
+            {
+                entity.GetType().GetProperty("FechaCreacion")?.SetValue(entity, DateTime.UtcNow);
+            }
+
+            if (entity.GetType().GetProperty("FechaActualizacion") != null)
+            {
+                entity.GetType().GetProperty("FechaActualizacion")?.SetValue(entity, DateTime.UtcNow);
+            }
+
+            _dbSet.Add(entity);
+            await _context.SaveChangesAsync();
+            return entity;
+        }
+
+        public virtual async Task<T> UpdateAsync(T entity)
+        {
+            // Establecer fecha de actualización si la entidad la tiene
+            if (entity.GetType().GetProperty("FechaActualizacion") != null)
+            {
+                entity.GetType().GetProperty("FechaActualizacion")?.SetValue(entity, DateTime.UtcNow);
+            }
+
+            _dbSet.Update(entity);
+            await _context.SaveChangesAsync();
+            return entity;
+        }
+
+        public virtual async Task<bool> DeleteAsync(int id)
+        {
+            var entity = await _dbSet.FindAsync(id);
+            if (entity == null) return false;
+
+            _dbSet.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
+        }
+
+        public virtual async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.FirstOrDefaultAsync(predicate);
+        }
+    }
+}
+```
+
+### DAL/Repositories/UsuarioRepository.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MyApi.DAL.Context;
+using MyApi.DAL.Interfaces;
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Repositories
+{
+    public class UsuarioRepository : BaseRepository<Usuario>, IUsuarioRepository
+    {
+        public UsuarioRepository(ApplicationDbContext context) : base(context)
+        {
+        }
+
+        public async Task<Usuario?> GetByEmailAsync(string email)
+        {
+            return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<Usuario?> GetByGoogleIdAsync(string googleId)
+        {
+            return await _dbSet.FirstOrDefaultAsync(u => u.GoogleId == googleId);
+        }
+    }
+}
+```
+
+### DAL/Repositories/ProductoRepository.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MyApi.DAL.Context;
+using MyApi.DAL.Interfaces;
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Repositories
+{
+    public class ProductoRepository : BaseRepository<Producto>, IProductoRepository
+    {
+        public ProductoRepository(ApplicationDbContext context) : base(context)
+        {
+        }
+
+        public async Task<IEnumerable<Producto>> GetActiveProductsAsync()
+        {
+            return await _dbSet.Where(p => p.Activo).ToListAsync();
+        }
+    }
+}
+```
+
+### DAL/Repositories/AlmacenRepository.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MyApi.DAL.Context;
+using MyApi.DAL.Interfaces;
+using MyApi.Models.Entities;
+
+namespace MyApi.DAL.Repositories
+{
+    public class AlmacenRepository : BaseRepository<Almacen>, IAlmacenRepository
+    {
+        public AlmacenRepository(ApplicationDbContext context) : base(context)
+        {
+        }
+
+        public override async Task<IEnumerable<Almacen>> GetAllAsync()
+        {
+            return await _dbSet.Include(a => a.Producto).ToListAsync();
+        }
+
+        public override async Task<Almacen?> GetByIdAsync(int id)
+        {
+            return await _dbSet.Include(a => a.Producto).FirstOrDefaultAsync(a => a.Id == id);
+        }
+
+        public async Task<IEnumerable<Almacen>> GetByProductoIdAsync(int productoId)
+        {
+            return await _dbSet.Include(a => a.Producto)
+                              .Where(a => a.IdProducto == productoId)
+                              .ToListAsync();
+        }
+
+        public async Task<Almacen?> GetByProductoIdSingleAsync(int productoId)
+        {
+            return await _dbSet.Include(a => a.Producto)
+                              .FirstOrDefaultAsync(a => a.IdProducto == productoId);
+        }
+    }
+}
+```
+
+## 4. MyApi.BLL - Capa de Lógica de Negocio
+
+### BLL/Interfaces/IBaseService.cs
+```csharp
+namespace MyApi.BLL.Interfaces
+{
+    public interface IBaseService<TDto, TCreateDto, TUpdateDto> where TDto : class
+    {
+        Task<IEnumerable<TDto>> GetAllAsync();
+        Task<TDto?> GetByIdAsync(int id);
+        Task<IEnumerable<TDto>> GetByColumnStringAsync(string columnName, string value);
+        Task<IEnumerable<TDto>> GetByColumnIntAsync(string columnName, int value);
+        Task<TDto> CreateAsync(TCreateDto createDto);
+        Task<TDto> UpdateAsync(TUpdateDto updateDto);
+        Task<bool> DeleteAsync(int id);
+    }
+}
+```
+
+### BLL/Interfaces/IUsuarioService.cs
+```csharp
+using MyApi.Models.DTOs;
+
+namespace MyApi.BLL.Interfaces
+{
+    public interface IUsuarioService : IBaseService<UsuarioDto, UsuarioCreateDto, UsuarioUpdateDto>
+    {
+        Task<UsuarioDto?> GetByEmailAsync(string email);
+        Task<UsuarioDto?> GetByGoogleIdAsync(string googleId);
+    }
+}
+```
+
+### BLL/Interfaces/IProductoService.cs
+```csharp
+using MyApi.Models.DTOs;
+
+namespace MyApi.BLL.Interfaces
+{
+    public interface IProductoService : IBaseService<ProductoDto, ProductoCreateDto, ProductoUpdateDto>
+    {
+        Task<IEnumerable<ProductoDto>> GetActiveProductsAsync();
+    }
+}
+```
+
+### BLL/Interfaces/IAlmacenService.cs
+```csharp
+using MyApi.Models.DTOs;
+
+namespace MyApi.BLL.Interfaces
+{
+    public interface IAlmacenService : IBaseService<AlmacenDto, AlmacenCreateDto, AlmacenUpdateDto>
+    {
+        Task<IEnumerable<AlmacenDto>> GetByProductoIdAsync(int productoId);
+        Task<AlmacenDto?> GetByProductoIdSingleAsync(int productoId);
+    }
+}
+```
+
+### BLL/Interfaces/IAuthService.cs
+```csharp
+using MyApi.Models.DTOs;
+
+namespace MyApi.BLL.Interfaces
+{
+    public interface IAuthService
+    {
+        Task<AuthResponseDto> GoogleLoginAsync(GoogleAuthDto googleAuthDto);
+        Task<string> GenerateJwtTokenAsync(UsuarioDto usuario);
+        Task<UsuarioDto?> ValidateGoogleTokenAsync(string token);
+    }
+}
+```
+
+### BLL/Mappings/MappingProfile.cs
+```csharp
+using AutoMapper;
+using MyApi.Models.DTOs;
+using MyApi.Models.Entities;
+
+namespace MyApi.BLL.Mappings
+{
+    public class MappingProfile : Profile
+    {
+        public MappingProfile()
+        {
+            // Usuario mappings
+            CreateMap<Usuario, UsuarioDto>();
+            CreateMap<UsuarioCreateDto, Usuario>();
+            CreateMap<UsuarioUpdateDto, Usuario>();
+
+            // Producto mappings
+            CreateMap<Producto, ProductoDto>();
+            CreateMap<ProductoCreateDto, Producto>();
+            CreateMap<ProductoUpdateDto, Producto>();
+
+            // Almacen mappings
+            CreateMap<Almacen, AlmacenDto>();
+            CreateMap<AlmacenCreateDto, Almacen>();
+            CreateMap<AlmacenUpdateDto, Almacen>();
+        }
+    }
+}
+```
+
+### BLL/Services/BaseService.cs
+```csharp
+using AutoMapper;
+using MyApi.DAL.Interfaces;
+
+namespace MyApi.BLL.Services
+{
+    public abstract class BaseService<TEntity, TDto, TCreateDto, TUpdateDto>
+        where TEntity : class
+        where TDto : class
+    {
+        protected readonly IBaseRepository<TEntity> _repository;
+        protected readonly IMapper _mapper;
+
+        protected BaseService(IBaseRepository<TEntity> repository, IMapper mapper)
+        {
+            _repository = repository;
+            _mapper = mapper;
+        }
+
+        public virtual async Task<IEnumerable<TDto>> GetAllAsync()
+        {
+            var entities = await _repository.GetAllAsync();
+            return _mapper.Map<IEnumerable<TDto>>(entities);
+        }
+
+        public virtual async Task<TDto?> GetByIdAsync(int id)
+        {
+            var entity = await _repository.GetByIdAsync(id);
+            return entity == null ? null : _mapper.Map<TDto>(entity);
+        }
+
+        public virtual async Task<IEnumerable<TDto>> GetByColumnStringAsync(string columnName, string value)
+        {
+            var entities = await _repository.GetByColumnStringAsync(columnName, value);
+            return _mapper.Map<IEnumerable<TDto>>(entities);
+        }
+
+        public virtual async Task<IEnumerable<TDto>> GetByColumnIntAsync(string columnName, int value)
+        {
+            var entities = await _repository.GetByColumnIntAsync(columnName, value);
+            return _mapper.Map<IEnumerable<TDto>>(entities);
+        }
+
+        public virtual async Task<TDto> CreateAsync(TCreateDto createDto)
+        {
+            var entity = _mapper.Map<TEntity>(createDto);
+            var createdEntity = await _repository.CreateAsync(entity);
+            return _mapper.Map<TDto>(createdEntity);
+        }
+
+        public virtual async Task<TDto> UpdateAsync(TUpdateDto updateDto)
+        {
+            var entity = _mapper.Map<TEntity>(updateDto);
+            var updatedEntity = await _repository.UpdateAsync(entity);
+            return _mapper.Map<TDto>(updatedEntity);
+        }
+
+        public virtual async Task<bool> DeleteAsync(int id)
+        {
+            return await _repository.DeleteAsync(id);
+        }
+    }
+}
+```
+
+### BLL/Services/UsuarioService.cs
+```csharp
+using AutoMapper;
+using MyApi.BLL.Interfaces;
+using MyApi.BLL.Services;
+using MyApi.DAL.Interfaces;
+using MyApi.Models.DTOs;
+using MyApi.Models.Entities;
+
+namespace MyApi.BLL.Services
+{
+    public class UsuarioService : BaseService<Usuario, UsuarioDto, UsuarioCreateDto, UsuarioUpdateDto>, IUsuarioService
+    {
+        private readonly IUsuarioRepository _usuarioRepository;
+
+        public UsuarioService(IUsuarioRepository usuarioRepository, IMapper mapper)
+            : base(usuarioRepository, mapper)
+        {
+            _usuarioRepository = usuarioRepository;
+        }
+
+        public async Task<UsuarioDto?> GetByEmailAsync(string email)
+        {
+            var usuario = await _usuarioRepository.GetByEmailAsync(email);
+            return usuario == null ? null : _mapper.Map<UsuarioDto>(usuario);
+        }
+
+        public async Task<UsuarioDto?> GetByGoogleIdAsync(string googleId)
+        {
+            var usuario = await _usuarioRepository.GetByGoogleIdAsync(googleId);
+            return usuario == null ? null : _mapper.Map<UsuarioDto>(usuario);
+        }
+    }
+}
+```
+
+### BLL/Services/ProductoService.cs
+```csharp
+using AutoMapper;
+using MyApi.BLL.Interfaces;
+using MyApi.BLL.Services;
+using MyApi.DAL.Interfaces;
+using MyApi.Models.DTOs;
+using MyApi.Models.Entities;
+
+namespace MyApi.BLL.Services
+{
+    public class ProductoService : BaseService<Producto, ProductoDto, ProductoCreateDto, ProductoUpdateDto>, IProductoService
+    {
+        private readonly IProductoRepository _productoRepository;
+
+        public ProductoService(IProductoRepository productoRepository, IMapper mapper)
+            : base(productoRepository, mapper)
+        {
+            _productoRepository = productoRepository;
+        }
+
+        public async Task<IEnumerable<ProductoDto>> GetActiveProductsAsync()
+        {
+            var productos = await _productoRepository.GetActiveProductsAsync();
+            return _mapper.Map<IEnumerable<ProductoDto>>(productos);
+        }
+    }
+}
+```
+
+### BLL/Services/AlmacenService.cs
+```csharp
+using AutoMapper;
+using MyApi.BLL.Interfaces;
+using MyApi.BLL.Services;
+using MyApi.DAL.Interfaces;
+using MyApi.Models.DTOs;
+using MyApi.Models.Entities;
+
+namespace MyApi.BLL.Services
+{
+    public class AlmacenService : BaseService<Almacen, AlmacenDto, AlmacenCreateDto, AlmacenUpdateDto>, IAlmacenService
+    {
+        private readonly IAlmacenRepository _almacenRepository;
+
+        public AlmacenService(IAlmacenRepository almacenRepository, IMapper mapper)
+            : base(almacenRepository, mapper)
+        {
+            _almacenRepository = almacenRepository;
+        }
+
+        public async Task<IEnumerable<AlmacenDto>> GetByProductoIdAsync(int productoId)
+        {
+            var almacenes = await _almacenRepository.GetByProductoIdAsync(productoId);
+            return _mapper.Map<IEnumerable<AlmacenDto>>(almacenes);
+        }
+
+        public async Task<AlmacenDto?> GetByProductoIdSingleAsync(int productoId)
+        {
+            var almacen = await _almacenRepository.GetByProductoIdSingleAsync(productoId);
+            return almacen == null ? null : _mapper.Map<AlmacenDto>(almacen);
+        }
+    }
+}
+```
+
+### BLL/Services/AuthService.cs
+```csharp
+using AutoMapper;
+using Google.Apis.Auth;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using MyApi.BLL.Interfaces;
+using MyApi.Models.DTOs;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace MyApi.BLL.Services
+{
+    public class AuthService : IAuthService
+    {
+        private readonly IUsuarioService _usuarioService;
+        private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
+
+        public AuthService(IUsuarioService usuarioService, IConfiguration configuration, IMapper mapper)
+        {
+            _usuarioService = usuarioService;
+            _configuration = configuration;
+            _mapper = mapper;
+        }
+
+        public async Task<AuthResponseDto> GoogleLoginAsync(GoogleAuthDto googleAuthDto)
+        {
+            var usuario = await ValidateGoogleTokenAsync(googleAuthDto.Token);
+
+            if (usuario == null)
+                throw new UnauthorizedAccessException("Token de Google inválido");
+
+            // Verificar si el usuario existe
+            var existingUser = await _usuarioService.GetByGoogleIdAsync(usuario.GoogleId);
+
+            if (existingUser == null)
+            {
+                // Crear nuevo usuario
+                var newUser = new UsuarioCreateDto
+                {
+                    Nombre = usuario.Nombre,
+                    Email = usuario.Email,
+                    GoogleId = usuario.GoogleId,
+                    ImagenUrl = usuario.ImagenUrl
+                };
+
+                existingUser = await _usuarioService.CreateAsync(newUser);
+            }
+
+            var token = await GenerateJwtTokenAsync(existingUser);
+
+            return new AuthResponseDto
+            {
+                Token = token,
+                Usuario = existingUser,
+                ExpiresAt = DateTime.UtcNow.AddHours(24)
+            };
+        }
+
+        public async Task<string> GenerateJwtTokenAsync(UsuarioDto usuario)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "");
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                    new Claim(ClaimTypes.Name, usuario.Nombre),
+                    new Claim(ClaimTypes.Email, usuario.Email),
+                    new Claim("GoogleId", usuario.GoogleId)
+                }),
+                Expires = DateTime.UtcNow.AddHours(24),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _configuration["Jwt:Issuer"],
+                Audience = _configuration["Jwt:Audience"]
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        public async Task<UsuarioDto?> ValidateGoogleTokenAsync(string token)
+        {
+            try
+            {
+                var clientId = _configuration["Google:ClientId"];
+                var payload = await GoogleJsonWebSignature.ValidateAsync(token, new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { clientId }
+                });
+
+                return new UsuarioDto
+                {
+                    Nombre = payload.Name,
+                    Email = payload.Email,
+                    GoogleId = payload.Subject,
+                    ImagenUrl = payload.Picture ?? string.Empty
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+}
+
+## 5. MyApi.API - Capa de Controladores
+
+### API/Controllers/BaseController.cs
+```csharp
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MyApi.BLL.Interfaces;
+
+namespace MyApi.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public abstract class BaseController<TDto, TCreateDto, TUpdateDto> : ControllerBase
+        where TDto : class
+    {
+        protected readonly IBaseService<TDto, TCreateDto, TUpdateDto> _service;
+
+        protected BaseController(IBaseService<TDto, TCreateDto, TUpdateDto> service)
+        {
+            _service = service;
+        }
+
+        [HttpGet]
+        public virtual async Task<ActionResult<IEnumerable<TDto>>> GetAll()
+        {
+            try
+            {
+                var items = await _service.GetAllAsync();
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        public virtual async Task<ActionResult<TDto>> GetById(int id)
+        {
+            try
+            {
+                var item = await _service.GetByIdAsync(id);
+                if (item == null)
+                    return NotFound();
+
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("bystring/{column}/{value}")]
+        public virtual async Task<ActionResult<IEnumerable<TDto>>> GetByColumnString(string column, string value)
+        {
+            try
+            {
+                var items = await _service.GetByColumnStringAsync(column, value);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("byint/{column}/{value}")]
+        public virtual async Task<ActionResult<IEnumerable<TDto>>> GetByColumnInt(string column, int value)
+        {
+            try
+            {
+                var items = await _service.GetByColumnIntAsync(column, value);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public virtual async Task<ActionResult<TDto>> Create([FromBody] TCreateDto createDto)
+        {
+            try
+            {
+                var item = await _service.CreateAsync(createDto);
+                return CreatedAtAction(nameof(GetById), new { id = GetItemId(item) }, item);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut]
+        public virtual async Task<ActionResult<TDto>> Update([FromBody] TUpdateDto updateDto)
+        {
+            try
+            {
+                var item = await _service.UpdateAsync(updateDto);
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public virtual async Task<ActionResult> Delete(int id)
+        {
+            try
+            {
+                var result = await _service.DeleteAsync(id);
+                if (!result)
+                    return NotFound();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        protected abstract object GetItemId(TDto item);
+    }
+}
+```
+
+### API/Controllers/AuthController.cs
+```csharp
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MyApi.BLL.Interfaces;
+using MyApi.Models.DTOs;
+
+namespace MyApi.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
+        [HttpPost("google")]
+        [AllowAnonymous]
+        public async Task<ActionResult<AuthResponseDto>> GoogleLogin([FromBody] GoogleAuthDto googleAuthDto)
+        {
+            try
+            {
+                var result = await _authService.GoogleLoginAsync(googleAuthDto);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public ActionResult GetCurrentUser()
+        {
+            var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("NameIdentifier")?.Value;
+            var userName = User.FindFirst("name")?.Value ?? User.Identity?.Name;
+            var userEmail = User.FindFirst("email")?.Value;
+
+            return Ok(new
+            {
+                id = userId,
+                name = userName,
+                email = userEmail
+            });
+        }
+    }
+}
+```
+
+### API/Controllers/UsuariosController.cs
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using MyApi.BLL.Interfaces;
+using MyApi.Models.DTOs;
+
+namespace MyApi.API.Controllers
+{
+    public class UsuariosController : BaseController<UsuarioDto, UsuarioCreateDto, UsuarioUpdateDto>
+    {
+        private readonly IUsuarioService _usuarioService;
+
+        public UsuariosController(IUsuarioService usuarioService) : base(usuarioService)
+        {
+            _usuarioService = usuarioService;
+        }
+
+        [HttpGet("email/{email}")]
+        public async Task<ActionResult<UsuarioDto>> GetByEmail(string email)
+        {
+            try
+            {
+                var usuario = await _usuarioService.GetByEmailAsync(email);
+                if (usuario == null)
+                    return NotFound();
+
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("google/{googleId}")]
+        public async Task<ActionResult<UsuarioDto>> GetByGoogleId(string googleId)
+        {
+            try
+            {
+                var usuario = await _usuarioService.GetByGoogleIdAsync(googleId);
+                if (usuario == null)
+                    return NotFound();
+
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        protected override object GetItemId(UsuarioDto item)
+        {
+            return item.Id;
+        }
+    }
+}
+```
+
+### API/Controllers/ProductosController.cs
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using MyApi.BLL.Interfaces;
+using MyApi.Models.DTOs;
+
+namespace MyApi.API.Controllers
+{
+    public class ProductosController : BaseController<ProductoDto, ProductoCreateDto, ProductoUpdateDto>
+    {
+        private readonly IProductoService _productoService;
+
+        public ProductosController(IProductoService productoService) : base(productoService)
+        {
+            _productoService = productoService;
+        }
+
+        [HttpGet("active")]
+        public async Task<ActionResult<IEnumerable<ProductoDto>>> GetActiveProducts()
+        {
+            try
+            {
+                var productos = await _productoService.GetActiveProductsAsync();
+                return Ok(productos);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        protected override object GetItemId(ProductoDto item)
+        {
+            return item.Id;
+        }
+    }
+}
+```
+
+### API/Controllers/AlmacenesController.cs
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using MyApi.BLL.Interfaces;
+using MyApi.Models.DTOs;
+
+namespace MyApi.API.Controllers
+{
+    public class AlmacenesController : BaseController<AlmacenDto, AlmacenCreateDto, AlmacenUpdateDto>
+    {
+        private readonly IAlmacenService _almacenService;
+
+        public AlmacenesController(IAlmacenService almacenService) : base(almacenService)
+        {
+            _almacenService = almacenService;
+        }
+
+        [HttpGet("producto/{productoId}")]
+        public async Task<ActionResult<IEnumerable<AlmacenDto>>> GetByProductoId(int productoId)
+        {
+            try
+            {
+                var almacenes = await _almacenService.GetByProductoIdAsync(productoId);
+                return Ok(almacenes);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("producto/{productoId}/single")]
+        public async Task<ActionResult<AlmacenDto>> GetByProductoIdSingle(int productoId)
+        {
+            try
+            {
+                var almacen = await _almacenService.GetByProductoIdSingleAsync(productoId);
+                if (almacen == null)
+                    return NotFound();
+
+                return Ok(almacen);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        protected override object GetItemId(AlmacenDto item)
+        {
+            return item.Id;
+        }
+    }
+}
+```
+
+### API/Program.cs
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using MyApi.DAL.Context;
+using MyApi.DAL.Interfaces;
+using MyApi.DAL.Repositories;
+using MyApi.BLL.Interfaces;
+using MyApi.BLL.Services;
+using MyApi.BLL.Mappings;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Database
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// Repositories
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
+builder.Services.AddScoped<IAlmacenRepository, AlmacenRepository>();
+
+// Services
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IAlmacenService, AlmacenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"];
+var key = Encoding.ASCII.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(x =>
+{
+    x.RequireHttpsMetadata = false;
+    x.SaveToken = true;
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("http://localhost:4200") // Angular default port
+               .AllowAnyHeader()
+               .AllowAnyMethod()
+               .AllowCredentials();
+    });
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
+```
+
+### API/appsettings.json
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=MyApiDB;Trusted_Connection=true;TrustServerCertificate=true;"
+  },
+  "Jwt": {
+    "Key": "tu-clave-secreta-muy-larga-y-segura-de-al-menos-32-caracteres",
+    "Issuer": "MyApi",
+    "Audience": "MyApi"
+  },
+  "Google": {
+    "ClientId": "tu-google-client-id.apps.googleusercontent.com"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+```
+
+## 6. Archivos de Proyecto (.csproj)
+
+### MyApi.Models.csproj
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+  </ItemGroup>
+</Project>
+```
+
+### MyApi.DAL.csproj
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyApi.Models\MyApi.Models.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+### MyApi.BLL.csproj
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.0.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyApi.DAL\MyApi.DAL.csproj" />
+    <ProjectReference Include="..\MyApi.Models\MyApi.Models.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+### MyApi.API.csproj
+```xml
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyApi.BLL\MyApi.BLL.csproj" />
+    <ProjectReference Include="..\MyApi.DAL\MyApi.DAL.csproj" />
+    <ProjectReference Include="..\MyApi.Models\MyApi.Models.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+## 7. Comandos para Migrations
+
+```bash
+# Agregar migración inicial
+dotnet ef migrations add InitialCreate --project MyApi.DAL --startup-project MyApi.API
+
+# Actualizar base de datos
+dotnet ef database update --project MyApi.DAL --startup-project MyApi.API
+```
+
+## 8. Configuración Angular para Google Auth
+
+### Instalar dependencias
+```bash
+npm install @angular/google-signin
+# o
+npm install google-auth-library
+```
+
+### Ejemplo de servicio Angular
+```typescript
+// auth.service.ts
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private apiUrl = 'https://localhost:7000/api';
+
+  constructor(private http: HttpClient) {}
+
+  googleLogin(token: string): Observable<any> {
+    return this.http.post(`${apiUrl}/auth/google`, { token });
+  }
+}
+```
+
+## Endpoints Disponibles
+
+### Autenticación
+- `POST /api/auth/google` - Login con Google
+- `GET /api/auth/me` - Obtener usuario actual
+
+### Usuarios
+- `GET /api/usuarios` - Obtener todos
+- `GET /api/usuarios/{id}` - Obtener por ID
+- `GET /api/usuarios/bystring/{column}/{value}` - Buscar por columna string
+- `GET /api/usuarios/byint/{column}/{value}` - Buscar por columna int
+- `POST /api/usuarios` - Crear usuario
+- `PUT /api/usuarios` - Actualizar usuario
+- `DELETE /api/usuarios/{id}` - Eliminar usuario
+
+### Productos
+- Similar estructura + `GET /api/productos/active`
+
+### Almacenes
+- Similar estructura + endpoints específicos para búsqueda por producto
+
+## Notas Importantes
+
+1. **Configurar Google Client ID** en appsettings.json
+2. **Cambiar connection string** para tu SQL Server
+3. **Generar clave JWT segura** (mínimo 32 caracteres)
+4. **Configurar CORS** según tu dominio Angular
+5. **Ejecutar migrations** antes de usar la API
+
+La arquitectura está completamente desacoplada con interfaces, permitiendo fácil testing y reutilización de código.
