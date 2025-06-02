@@ -6,7 +6,7 @@ namespace Noe.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public abstract class BaseController<TDto, TCreateDto, TUpdateDto> : ControllerBase
         where TDto : class
     {
