@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Noe.DAL")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+866331a6dcc3708f6ad82938809db9d98bb6199c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d9811910871d83c856922bc066476b42122b8587")]
 [assembly: System.Reflection.AssemblyProductAttribute("Noe.DAL")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Noe.DAL")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
