@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Noe.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d9811910871d83c856922bc066476b42122b8587")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eab640adf9e4443b582e664c03eb19865951fcd3")]
 [assembly: System.Reflection.AssemblyProductAttribute("Noe.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Noe.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
