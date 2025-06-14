@@ -21,5 +21,4 @@
     <ProjectReference Include="..\Noe.DAL\Noe.DAL.csproj" />
     <ProjectReference Include="..\Noe.Models\Noe.Models.csproj" />
   </ItemGroup>
-
 </Project>
