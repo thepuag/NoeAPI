@@ -21,6 +21,8 @@ public class ProyectoTecnologia
     public Tecnologia Tecnologia { get; set; } = null!;
 
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
-
+        
     public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+        
+    public bool Activo { get; set; } = true;
 }

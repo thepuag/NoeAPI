@@ -1,26 +1,23 @@
 namespace Noe.Models.DTOs
 {
-    public class ProductoDto : BaseDto
+    public class TecnologiaDto : BaseDto
     {
         public string Nombre { get; set; } = string.Empty;
         public string Descripcion { get; set; } = string.Empty;
-        public decimal Precio { get; set; }
-        public string UrlImg { get; set; } = string.Empty;
+        public string IconoSvg { get; set; } = string.Empty;
     }
     
-    public class ProductoCreateDto
+    public class TecnologiaCreateDto
     {
         public string Nombre { get; set; } = string.Empty;
         public string Descripcion { get; set; } = string.Empty;
-        public decimal Precio { get; set; }
-        public string UrlImg { get; set; } = string.Empty;
+        public string IconoSvg { get; set; } = string.Empty;
     }
     
-    public class ProductoUpdateDto : BaseDto
+    public class TecnologiaUpdateDto : BaseDto
     {
         public string Nombre { get; set; } = string.Empty;
         public string Descripcion { get; set; } = string.Empty;
-        public decimal Precio { get; set; }
-        public string UrlImg { get; set; } = string.Empty;
+        public string IconoSvg { get; set; } = string.Empty;
     }
 }

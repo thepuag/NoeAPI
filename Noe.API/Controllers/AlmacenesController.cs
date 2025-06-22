@@ -6,7 +6,7 @@ namespace Noe.API.Controllers
 {
     public class AlmacenesController : BaseController<AlmacenDto, AlmacenCreateDto, AlmacenUpdateDto>
     {
-        private readonly IAlmacenService _almacenService;
+         private readonly IAlmacenService _almacenService;
         
         public AlmacenesController(IAlmacenService almacenService) : base(almacenService)
         {

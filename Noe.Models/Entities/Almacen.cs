@@ -18,6 +18,8 @@ namespace Noe.Models.Entities
         
         public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
         
+        public bool Activo { get; set; } = true;
+        
         // Navegación
         [ForeignKey("IdProducto")]
         public virtual Producto Producto { get; set; } = null!;

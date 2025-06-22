@@ -11,6 +11,9 @@ namespace Noe.DAL.Context
         
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Producto> Productos { get; set; }
+        public DbSet<Proyecto> Proyectos { get; set; }
+        public DbSet<Tecnologia> Tecnologias { get; set; }
+        public DbSet<ProyectoTecnologia> ProyectosTecnologias { get; set; }
         public DbSet<Almacen> Almacenes { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)

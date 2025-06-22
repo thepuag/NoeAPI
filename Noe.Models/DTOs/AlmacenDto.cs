@@ -13,9 +13,8 @@ namespace Noe.Models.DTOs
         public int Cantidad { get; set; }
     }
     
-    public class AlmacenUpdateDto
+    public class AlmacenUpdateDto : BaseDto
     {
-        public int Id { get; set; }
         public int IdProducto { get; set; }
         public int Cantidad { get; set; }
     }
